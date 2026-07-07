@@ -352,6 +352,13 @@ all_annotations = [
     ("2026-01-30", "鸿蒙:芝麻喜娜AI摘要改为芝麻AI摘要", "xina"),
     ("2026-03-26", "鸿蒙:正文页支持喜娜提取摘要", "xina"),
     # 社区/股吧/评论
+    # 热点新闻事件
+    ("2025-04-07", "热点事件:中美关税升级全球股市黑色星期一", "news"),
+    ("2026-01-27", "热点事件:美股创历史新高/黄金破5100$", "news"),
+    ("2026-01-28", "热点事件:美联储暂停降息/黄金冲5311$", "news"),
+    ("2026-01-29", "热点事件:美退出巴黎协定/中东局势升级", "news"),
+    ("2026-02-05", "热点事件:春节前行情/黄金高位回调", "news"),
+    # 社区/股吧/评论
     ("2025-03-19", "个股评论右上互动消息入口改为消息中心入口", "community"),
     ("2025-03-26", "分享到社区:发帖支持仅传图&展示schema", "community"),
     ("2025-03-27", "发帖优化(股吧):帖子不展示在个人主页", "community"),
@@ -426,6 +433,7 @@ tr:hover { background: #f0f4ff; }
 .annotation-item input[type="checkbox"] { cursor: pointer; flex-shrink: 0; width: 16px; height: 16px; }
 .tag-xina { display: inline-block; background: #3498DB; color: #fff; font-size: 11px; padding: 0 8px; border-radius: 10px; flex-shrink: 0; }
 .tag-community { display: inline-block; background: #27AE60; color: #fff; font-size: 11px; padding: 0 8px; border-radius: 10px; flex-shrink: 0; }
+.tag-news { display: inline-block; background: #E74C3C; color: #fff; font-size: 11px; padding: 0 8px; border-radius: 10px; flex-shrink: 0; }
 .ann-date { color: #888; font-size: 12px; flex-shrink: 0; width: 82px; }
 .ann-label { color: #333; flex: 1; }
 .legend-row { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; font-size: 13px; }
@@ -466,6 +474,7 @@ tr:hover { background: #f0f4ff; }
   <div class="legend-row">
     <span><span class="legend-dot" style="background:#3498DB;"></span>喜娜AI</span>
     <span><span class="legend-dot" style="background:#27AE60;"></span>社区/股吧/评论</span>
+    <span><span class="legend-dot" style="background:#E74C3C;"></span>热点事件</span>
     <span style="color:#999;">勾选开关: 控制图上对应竖线显隐</span>
   </div>
   <div class="annotation-list" id="annotationList"></div>
@@ -488,30 +497,86 @@ var showMap = {};
 allAnnotations.forEach(function(a, i) { showMap[i] = true; });
 
 // 标注颜色: xina -> 蓝色, community -> 绿色
-var tagColors = { xina: '#3498DB', community: '#27AE60' };
-var tagLabels = { xina: '喜娜AI', community: '社区' };
+var tagColors = { xina: '#3498DB', community: '#27AE60', news: '#E74C3C' };
+var tagLabels = { xina: '喜娜AI', community: '社区', news: '热点事件' };
 
 // 获取当前应显示的markLine数据
-function getMarkLines(type) {
+function getMarkLines(type, labels) {
   var markers = [];
   allAnnotations.forEach(function(a, i) {
     if (!showMap[i]) return;
     var color = tagColors[a.tag];
-    var label = type === 'daily' ? a.label.split(':')[0] : '';
+    var xVal = a.date;
+    if (type === 'weekly' || type === 'monthly') {
+      // 周视图: 将日期映射到对应周标签
+      if (type === 'weekly') {
+        var found = null;
+        labels.forEach(function(l) {
+          // 周标签格式: 251201~1207 (start=YYMMDD, end=MMDD)
+          var parts = l.split('~');
+          if (parts.length === 2) {
+            var syy = parts[0].slice(0,2);
+            var smm = parts[0].slice(2,4);
+            var sdd = parts[0].slice(4,6);
+            var startDay = '20' + syy + '-' + smm + '-' + sdd;
+            var emm = parts[1].slice(0,2);
+            var edd = parts[1].slice(2,4);
+            // 如果结束月份<开始月份,说明跨年了,结束年份+1
+            var eyy = (parseInt(emm) < parseInt(smm)) ? (parseInt(syy) + 1).toString() : syy;
+            var endDate = '20' + eyy + '-' + emm + '-' + edd;
+            if (a.date >= startDay && a.date <= endDate) {
+              found = l;
+            }
+          }
+        });
+        if (found) xVal = found; else return;
+      } else {
+        // 月视图: 将日期映射到对应月标签 (2025-12)
+        var m = a.date.slice(0, 7);
+        if (labels.indexOf(m) >= 0) {
+          xVal = m;
+        } else {
+          return;
+        }
+      }
+    }
     markers.push({
-      xAxis: a.date,
-      label: { formatter: label, fontSize: 9, color: color, position: 'start' },
-      lineStyle: { color: color, type: 'dashed', width: 1 }
+      xAxis: xVal,
+      label: { show: false },
+      lineStyle: { color: color, type: 'dashed', width: 2 }
     });
   });
   return markers;
 }
 
 // 获取tooltip中显示的信息
-function getAnnotationInfo(key) {
+function getAnnotationInfo(key, type) {
   var parts = [];
   allAnnotations.forEach(function(a) {
+    var match = false;
     if (a.date === key) {
+      match = true;
+    } else if (type === 'monthly' && a.date.slice(0, 7) === key) {
+      match = true;
+    } else if (type === 'weekly') {
+      // 周标签格式: 251201~1207 (start=YYMMDD, end=MMDD)
+      var parts2 = key.split('~');
+      if (parts2.length === 2) {
+        var syy = parts2[0].slice(0,2);
+        var smm = parts2[0].slice(2,4);
+        var sdd = parts2[0].slice(4,6);
+        var startDay = '20' + syy + '-' + smm + '-' + sdd;
+        var emm = parts2[1].slice(0,2);
+        var edd = parts2[1].slice(2,4);
+        // 如果结束月份<开始月份,说明跨年了,结束年份+1
+        var eyy = (parseInt(emm) < parseInt(smm)) ? (parseInt(syy) + 1).toString() : syy;
+        var endDate = '20' + eyy + '-' + emm + '-' + edd;
+        if (a.date >= startDay && a.date <= endDate) {
+          match = true;
+        }
+      }
+    }
+    if (match) {
       var color = tagColors[a.tag];
       parts.push('<div style="color:' + color + ';margin:2px 0;">[' + tagLabels[a.tag] + '] ' + a.label + '</div>');
     }
@@ -542,7 +607,7 @@ function buildChart(data, type) {
             '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + p.color + ';"></span>' +
             p.seriesName + ': <strong>' + v + '</strong></div>';
         });
-        return s + getAnnotationInfo(key);
+        return s + getAnnotationInfo(key, type);
       }
     },
     legend: { data: ['主动DAU', '社区首页UV'], top: 5, textStyle: { fontSize: 13 } },
@@ -586,7 +651,7 @@ function buildChart(data, type) {
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          data: getMarkLines(type),
+          data: getMarkLines(type, labels),
           label: { fontSize: 9 },
           lineStyle: { type: 'dashed', width: 1 }
         }
@@ -608,7 +673,7 @@ function buildChart(data, type) {
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          data: getMarkLines(type),
+          data: getMarkLines(type, labels),
           label: { fontSize: 9 },
           lineStyle: { type: 'dashed', width: 1 }
         }
@@ -632,7 +697,7 @@ function buildPenetrationChart(data, type) {
         var p = params[0];
         return '<div style="font-weight:600;margin-bottom:6px;">' + p.axisValue + '</div>' +
           '功能渗透率: <strong>' + p.value + '%</strong>' +
-          getAnnotationInfo(p.axisValue);
+          getAnnotationInfo(p.axisValue, type);
       }
     },
     grid: { left: 60, right: 30, bottom: 40, top: 30 },
@@ -666,7 +731,7 @@ function buildPenetrationChart(data, type) {
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          data: getMarkLines(type),
+          data: getMarkLines(type, labels),
           label: { fontSize: 9 },
           lineStyle: { type: 'dashed', width: 1 }
         }
