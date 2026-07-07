@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>主动DAU & 社区首页UV</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #f5f7fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
+.container { max-width: 1100px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 30px; }
+.chart-section { margin-bottom: 10px; }
+h2 { text-align: center; color: #333; font-weight: 500; margin-bottom: 20px; }
+h3 { text-align: center; color: #555; font-weight: 500; margin: 20px 0 15px 0; font-size: 16px; }
+.tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+.tab-btn { padding: 8px 24px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; color: #555; transition: all .2s; }
+.tab-btn:hover { border-color: #5470C6; color: #5470C6; }
+.tab-btn.active { background: #5470C6; color: #fff; border-color: #5470C6; }
+#chart { width: 100%; height: 420px; }
+#chart2 { width: 100%; height: 350px; }
+.table-wrap { margin-top: 20px; overflow-x: auto; max-height: 350px; overflow-y: auto; }
+.separator { border: none; border-top: 1px solid #e8e8e8; margin: 25px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { background: #f0f4ff; color: #333; font-weight: 600; padding: 8px 10px; border: 1px solid #e0e5ee; text-align: center; position: sticky; top: 0; z-index: 1; }
+td { padding: 6px 10px; border: 1px solid #e0e5ee; text-align: center; color: #444; }
+tr:nth-child(even) { background: #fafbfc; }
+tr:hover { background: #f0f4ff; }
+.info { text-align: center; color: #999; font-size: 12px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="daily">日数据</button>
+    <button class="tab-btn" data-tab="weekly">周均</button>
+    <button class="tab-btn" data-tab="monthly">月均</button>
+  </div>
+
+  <h2>DAU & 社区首页UV</h2>
+  <div id="chart"></div>
+  <div class="table-wrap">
+    <table id="data-table">
+      <thead><tr><th>日期</th><th>主动DAU</th><th>社区首页UV</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <hr class="separator">
+
+  <h3>社区首页功能渗透率</h3>
+  <div id="chart2"></div>
+  <div class="table-wrap">
+    <table id="penetration-table">
+      <thead><tr><th>日期</th><th>功能渗透率</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="info">数据周期: 2025-12-01 ~ 2026-07-06</div>
+</div>
+<script>
+var daysData = {"2025-12-01": {"dau": 990914, "community": 4054}, "2025-12-02": {"dau": 1012612, "community": 4254}, "2025-12-03": {"dau": 1010840, "community": 4373}, "2025-12-04": {"dau": 1006405, "community": 4042}, "2025-12-05": {"dau": 981577, "community": 3749}, "2025-12-06": {"dau": 723677, "community": 2550}, "2025-12-07": {"dau": 560746, "community": 2252}, "2025-12-08": {"dau": 979486, "community": 3783}, "2025-12-09": {"dau": 1001761, "community": 4081}, "2025-12-10": {"dau": 1012719, "community": 4218}, "2025-12-11": {"dau": 1034741, "community": 4788}, "2025-12-12": {"dau": 994479, "community": 4177}, "2025-12-13": {"dau": 762590, "community": 2844}, "2025-12-14": {"dau": 571768, "community": 2292}, "2025-12-15": {"dau": 971913, "community": 4154}, "2025-12-16": {"dau": 1020486, "community": 4667}, "2025-12-17": {"dau": 1013829, "community": 4344}, "2025-12-18": {"dau": 1018149, "community": 4680}, "2025-12-19": {"dau": 1000679, "community": 4295}, "2025-12-20": {"dau": 727651, "community": 2554}, "2025-12-21": {"dau": 550088, "community": 2352}, "2025-12-22": {"dau": 974857, "community": 4273}, "2025-12-23": {"dau": 1016848, "community": 4640}, "2025-12-24": {"dau": 1012670, "community": 4760}, "2025-12-25": {"dau": 987369, "community": 4259}, "2025-12-26": {"dau": 975070, "community": 4513}, "2025-12-27": {"dau": 736971, "community": 3320}, "2025-12-28": {"dau": 582533, "community": 2933}, "2025-12-29": {"dau": 1022159, "community": 5602}, "2025-12-30": {"dau": 1032078, "community": 5284}, "2025-12-31": {"dau": 984399, "community": 4537}, "2026-01-01": {"dau": 697434, "community": 2671}, "2026-01-02": {"dau": 738751, "community": 3367}, "2026-01-03": {"dau": 763515, "community": 3456}, "2026-01-04": {"dau": 777600, "community": 3539}, "2026-01-05": {"dau": 1050682, "community": 4920}, "2026-01-06": {"dau": 1064749, "community": 5003}, "2026-01-07": {"dau": 1064528, "community": 5242}, "2026-01-08": {"dau": 1055436, "community": 5216}, "2026-01-09": {"dau": 1049381, "community": 5024}, "2026-01-10": {"dau": 783241, "community": 3538}, "2026-01-11": {"dau": 618151, "community": 3065}, "2026-01-12": {"dau": 1077513, "community": 5282}, "2026-01-13": {"dau": 1107598, "community": 5708}, "2026-01-14": {"dau": 1116877, "community": 5823}, "2026-01-15": {"dau": 1117369, "community": 5957}, "2026-01-16": {"dau": 1061788, "community": 5184}, "2026-01-17": {"dau": 782239, "community": 3332}, "2026-01-18": {"dau": 639477, "community": 3088}, "2026-01-19": {"dau": 1039566, "community": 4897}, "2026-01-20": {"dau": 1080996, "community": 5209}, "2026-01-21": {"dau": 1097765, "community": 5843}, "2026-01-22": {"dau": 1090907, "community": 5831}, "2026-01-23": {"dau": 1081513, "community": 5975}, "2026-01-24": {"dau": 819534, "community": 4080}, "2026-01-25": {"dau": 648203, "community": 3577}, "2026-01-26": {"dau": 1089991, "community": 6180}, "2026-01-27": {"dau": 1110726, "community": 6919}, "2026-01-28": {"dau": 1160277, "community": 7889}, "2026-01-29": {"dau": 1228498, "community": 10498}, "2026-01-30": {"dau": 1262245, "community": 12674}, "2026-01-31": {"dau": 1061808, "community": 9406}, "2026-02-01": {"dau": 834449, "community": 6280}, "2026-02-02": {"dau": 1317266, "community": 12382}, "2026-02-03": {"dau": 1276626, "community": 9864}, "2026-02-04": {"dau": 1268744, "community": 9345}, "2026-02-05": {"dau": 1262299, "community": 9713}, "2026-02-06": {"dau": 1228655, "community": 8675}, "2026-02-07": {"dau": 959856, "community": 4773}, "2026-02-08": {"dau": 704573, "community": 3529}, "2026-02-09": {"dau": 1148995, "community": 6321}, "2026-02-10": {"dau": 1148909, "community": 6006}, "2026-02-11": {"dau": 1136855, "community": 5870}, "2026-02-12": {"dau": 1108698, "community": 5171}, "2026-02-13": {"dau": 1087050, "community": 5478}, "2026-02-14": {"dau": 836545, "community": 3099}, "2026-02-15": {"dau": 628715, "community": 2317}, "2026-02-16": {"dau": 739366, "community": 2711}, "2026-02-17": {"dau": 785085, "community": 3106}, "2026-02-18": {"dau": 785266, "community": 3110}, "2026-02-19": {"dau": 781480, "community": 3235}, "2026-02-20": {"dau": 804540, "community": 3451}, "2026-02-21": {"dau": 790059, "community": 3086}, "2026-02-22": {"dau": 640467, "community": 2391}, "2026-02-23": {"dau": 903843, "community": 4369}, "2026-02-24": {"dau": 1162268, "community": 5748}, "2026-02-25": {"dau": 1167330, "community": 5453}, "2026-02-26": {"dau": 1174942, "community": 5961}, "2026-02-27": {"dau": 1183555, "community": 5895}, "2026-02-28": {"dau": 1161031, "community": 6225}, "2026-03-01": {"dau": 1013315, "community": 5611}, "2026-03-02": {"dau": 1347844, "community": 8387}, "2026-03-03": {"dau": 1351006, "community": 8262}, "2026-03-04": {"dau": 1341788, "community": 8010}, "2026-03-05": {"dau": 1299978, "community": 7139}, "2026-03-06": {"dau": 1274324, "community": 6838}, "2026-03-07": {"dau": 1004620, "community": 4472}, "2026-03-08": {"dau": 783047, "community": 3627}, "2026-03-09": {"dau": 1287956, "community": 7218}, "2026-03-10": {"dau": 1294487, "community": 6945}, "2026-03-11": {"dau": 1288497, "community": 6632}, "2026-03-12": {"dau": 1285044, "community": 6279}, "2026-03-13": {"dau": 1268924, "community": 6259}, "2026-03-14": {"dau": 982524, "community": 4376}, "2026-03-15": {"dau": 801533, "community": 3737}, "2026-03-16": {"dau": 1267504, "community": 6293}, "2026-03-17": {"dau": 1270361, "community": 5864}, "2026-03-18": {"dau": 1286717, "community": 6561}, "2026-03-19": {"dau": 1347459, "community": 8092}, "2026-03-20": {"dau": 1305185, "community": 6796}, "2026-03-21": {"dau": 1005247, "community": 4688}, "2026-03-22": {"dau": 842322, "community": 4072}, "2026-03-23": {"dau": 1431359, "community": 9629}, "2026-03-24": {"dau": 1402543, "community": 7913}, "2026-03-25": {"dau": 1362207, "community": 6915}, "2026-03-26": {"dau": 1337357, "community": 6432}, "2026-03-27": {"dau": 1323689, "community": 6018}, "2026-03-28": {"dau": 1024829, "community": 4035}, "2026-03-29": {"dau": 810717, "community": 3380}, "2026-03-30": {"dau": 1294899, "community": 5926}, "2026-03-31": {"dau": 1305405, "community": 5518}, "2026-04-01": {"dau": 1324127, "community": 5994}, "2026-04-02": {"dau": 1331661, "community": 6306}, "2026-04-03": {"dau": 1266079, "community": 4905}, "2026-04-04": {"dau": 857954, "community": 2961}, "2026-04-05": {"dau": 747474, "community": 2839}, "2026-04-06": {"dau": 1015920, "community": 4259}, "2026-04-07": {"dau": 1306284, "community": 5524}, "2026-04-08": {"dau": 1409776, "community": 6730}, "2026-04-09": {"dau": 1352125, "community": 5922}, "2026-04-10": {"dau": 1297181, "community": 5038}, "2026-04-11": {"dau": 987708, "community": 3490}, "2026-04-12": {"dau": 905167, "community": 3873}, "2026-04-13": {"dau": 1311431, "community": 5479}, "2026-04-14": {"dau": 1295368, "community": 5018}, "2026-04-15": {"dau": 1292279, "community": 4893}, "2026-04-16": {"dau": 1280175, "community": 4656}, "2026-04-17": {"dau": 1284058, "community": 4877}, "2026-04-18": {"dau": 1039217, "community": 3582}, "2026-04-19": {"dau": 817110, "community": 3125}, "2026-04-20": {"dau": 1272666, "community": 4847}, "2026-04-21": {"dau": 1284351, "community": 4901}, "2026-04-22": {"dau": 1270675, "community": 4877}, "2026-04-23": {"dau": 1267728, "community": 5031}, "2026-04-24": {"dau": 1263222, "community": 5043}, "2026-04-25": {"dau": 916309, "community": 2871}, "2026-04-26": {"dau": 768172, "community": 2690}, "2026-04-27": {"dau": 1208252, "community": 4610}, "2026-04-28": {"dau": 1240181, "community": 4630}, "2026-04-29": {"dau": 1234415, "community": 4429}, "2026-04-30": {"dau": 1202546, "community": 4155}, "2026-05-01": {"dau": 906841, "community": 2796}, "2026-05-02": {"dau": 815379, "community": 2263}, "2026-05-03": {"dau": 670309, "community": 1934}, "2026-05-04": {"dau": 900993, "community": 2981}, "2026-05-05": {"dau": 998869, "community": 3227}, "2026-05-06": {"dau": 1256736, "community": 4536}, "2026-05-07": {"dau": 1250968, "community": 4433}, "2026-05-08": {"dau": 1248021, "community": 4441}, "2026-05-09": {"dau": 998482, "community": 2637}, "2026-05-10": {"dau": 734794, "community": 2267}, "2026-05-11": {"dau": 1230500, "community": 4124}, "2026-05-12": {"dau": 1244904, "community": 4385}, "2026-05-13": {"dau": 1284565, "community": 4407}, "2026-05-14": {"dau": 1295919, "community": 4384}, "2026-05-15": {"dau": 1286894, "community": 4487}, "2026-05-16": {"dau": 923563, "community": 2699}, "2026-05-17": {"dau": 747602, "community": 2347}, "2026-05-18": {"dau": 1234690, "community": 4376}, "2026-05-19": {"dau": 1236846, "community": 4323}, "2026-05-20": {"dau": 1254695, "community": 4392}, "2026-05-21": {"dau": 1267352, "community": 4646}, "2026-05-22": {"dau": 1235488, "community": 4091}, "2026-05-23": {"dau": 947186, "community": 2554}, "2026-05-24": {"dau": 768694, "community": 2619}, "2026-05-25": {"dau": 1201080, "community": 3989}, "2026-05-26": {"dau": 1227753, "community": 4107}, "2026-05-27": {"dau": 1249255, "community": 4459}, "2026-05-28": {"dau": 1238903, "community": 4430}, "2026-05-29": {"dau": 1225926, "community": 4072}, "2026-05-30": {"dau": 872072, "community": 2226}, "2026-05-31": {"dau": 663601, "community": 1992}, "2026-06-01": {"dau": 1182600, "community": 3801}, "2026-06-02": {"dau": 1213861, "community": 3961}, "2026-06-03": {"dau": 1213703, "community": 4152}, "2026-06-04": {"dau": 1212854, "community": 4168}, "2026-06-05": {"dau": 1211218, "community": 4334}, "2026-06-06": {"dau": 965831, "community": 3009}, "2026-06-07": {"dau": 722395, "community": 2354}, "2026-06-08": {"dau": 1261710, "community": 4822}, "2026-06-09": {"dau": 1257023, "community": 4419}, "2026-06-10": {"dau": 1310748, "community": 5763}, "2026-06-11": {"dau": 1320599, "community": 5317}, "2026-06-12": {"dau": 1321505, "community": 5104}, "2026-06-13": {"dau": 986432, "community": 2705}, "2026-06-14": {"dau": 743602, "community": 2309}, "2026-06-15": {"dau": 1266008, "community": 4509}, "2026-06-16": {"dau": 1267815, "community": 4527}, "2026-06-17": {"dau": 1255257, "community": 4303}, "2026-06-18": {"dau": 1259098, "community": 4537}, "2026-06-19": {"dau": 1025799, "community": 3262}, "2026-06-20": {"dau": 829099, "community": 2309}, "2026-06-21": {"dau": 760663, "community": 2373}, "2026-06-22": {"dau": 1235126, "community": 4103}, "2026-06-23": {"dau": 1276774, "community": 4475}, "2026-06-24": {"dau": 1290074, "community": 4518}, "2026-06-25": {"dau": 1289016, "community": 4801}, "2026-06-26": {"dau": 1266258, "community": 4397}, "2026-06-27": {"dau": 961133, "community": 2555}, "2026-06-28": {"dau": 744261, "community": 2356}, "2026-06-29": {"dau": 1216927, "community": 4112}, "2026-06-30": {"dau": 1240069, "community": 3928}, "2026-07-01": {"dau": 1257607, "community": 4248}, "2026-07-02": {"dau": 1278013, "community": 4585}, "2026-07-03": {"dau": 1237187, "community": 3918}, "2026-07-04": {"dau": 834422, "community": 1985}, "2026-07-05": {"dau": 651250, "community": 1907}, "2026-07-06": {"dau": 1196419, "community": 3777}};
+var weeksData = {"251201~1207": {"dau": 898110, "community": 3611}, "251208~1214": {"dau": 908221, "community": 3740}, "251215~1221": {"dau": 900399, "community": 3864}, "251222~1228": {"dau": 898045, "community": 4100}, "251229~0104": {"dau": 859419, "community": 4065}, "260105~0111": {"dau": 955167, "community": 4573}, "260112~0118": {"dau": 986123, "community": 4911}, "260119~0125": {"dau": 979783, "community": 5059}, "260126~0201": {"dau": 1106856, "community": 8549}, "260202~0208": {"dau": 1145431, "community": 8326}, "260209~0215": {"dau": 1013681, "community": 4895}, "260216~0222": {"dau": 760895, "community": 3013}, "260223~0301": {"dau": 1109469, "community": 5609}, "260302~0308": {"dau": 1200372, "community": 6676}, "260309~0315": {"dau": 1172709, "community": 5921}, "260316~0322": {"dau": 1189256, "community": 6052}, "260323~0329": {"dau": 1241814, "community": 6332}, "260330~0405": {"dau": 1161086, "community": 4921}, "260406~0412": {"dau": 1182023, "community": 4977}, "260413~0419": {"dau": 1188520, "community": 4519}, "260420~0426": {"dau": 1149018, "community": 4323}, "260427~0503": {"dau": 1039703, "community": 3545}, "260504~0510": {"dau": 1055552, "community": 3503}, "260511~0517": {"dau": 1144850, "community": 3833}, "260518~0524": {"dau": 1134993, "community": 3857}, "260525~0531": {"dau": 1096941, "community": 3611}, "260601~0607": {"dau": 1103209, "community": 3683}, "260608~0614": {"dau": 1171660, "community": 4348}, "260615~0621": {"dau": 1094820, "community": 3689}, "260622~0628": {"dau": 1151806, "community": 3886}, "260629~0705": {"dau": 1102211, "community": 3526}};
+var monthsData = {"2025-12": {"dau": 912002, "community": 3956}, "2026-01": {"dau": 978657, "community": 5432}, "2026-02": {"dau": 1000981, "community": 5484}, "2026-03": {"dau": 1201377, "community": 6191}, "2026-04": {"dau": 1168320, "community": 4585}, "2026-05": {"dau": 1078028, "community": 3569}, "2026-06": {"dau": 1136915, "community": 3909}, "2026-07": {"dau": 1075816, "community": 3403}};
+
+var daysPenetration = {"2025-12-01": 0.41, "2025-12-02": 0.42, "2025-12-03": 0.43, "2025-12-04": 0.4, "2025-12-05": 0.38, "2025-12-06": 0.35, "2025-12-07": 0.4, "2025-12-08": 0.39, "2025-12-09": 0.41, "2025-12-10": 0.42, "2025-12-11": 0.46, "2025-12-12": 0.42, "2025-12-13": 0.37, "2025-12-14": 0.4, "2025-12-15": 0.43, "2025-12-16": 0.46, "2025-12-17": 0.43, "2025-12-18": 0.46, "2025-12-19": 0.43, "2025-12-20": 0.35, "2025-12-21": 0.43, "2025-12-22": 0.44, "2025-12-23": 0.46, "2025-12-24": 0.47, "2025-12-25": 0.43, "2025-12-26": 0.46, "2025-12-27": 0.45, "2025-12-28": 0.5, "2025-12-29": 0.55, "2025-12-30": 0.51, "2025-12-31": 0.46, "2026-01-01": 0.38, "2026-01-02": 0.46, "2026-01-03": 0.45, "2026-01-04": 0.46, "2026-01-05": 0.47, "2026-01-06": 0.47, "2026-01-07": 0.49, "2026-01-08": 0.49, "2026-01-09": 0.48, "2026-01-10": 0.45, "2026-01-11": 0.5, "2026-01-12": 0.49, "2026-01-13": 0.52, "2026-01-14": 0.52, "2026-01-15": 0.53, "2026-01-16": 0.49, "2026-01-17": 0.43, "2026-01-18": 0.48, "2026-01-19": 0.47, "2026-01-20": 0.48, "2026-01-21": 0.53, "2026-01-22": 0.53, "2026-01-23": 0.55, "2026-01-24": 0.5, "2026-01-25": 0.55, "2026-01-26": 0.57, "2026-01-27": 0.62, "2026-01-28": 0.68, "2026-01-29": 0.85, "2026-01-30": 1.0, "2026-01-31": 0.89, "2026-02-01": 0.75, "2026-02-02": 0.94, "2026-02-03": 0.77, "2026-02-04": 0.74, "2026-02-05": 0.77, "2026-02-06": 0.71, "2026-02-07": 0.5, "2026-02-08": 0.5, "2026-02-09": 0.55, "2026-02-10": 0.52, "2026-02-11": 0.52, "2026-02-12": 0.47, "2026-02-13": 0.5, "2026-02-14": 0.37, "2026-02-15": 0.37, "2026-02-16": 0.37, "2026-02-17": 0.4, "2026-02-18": 0.4, "2026-02-19": 0.41, "2026-02-20": 0.43, "2026-02-21": 0.39, "2026-02-22": 0.37, "2026-02-23": 0.48, "2026-02-24": 0.49, "2026-02-25": 0.47, "2026-02-26": 0.51, "2026-02-27": 0.5, "2026-02-28": 0.54, "2026-03-01": 0.55, "2026-03-02": 0.62, "2026-03-03": 0.61, "2026-03-04": 0.6, "2026-03-05": 0.55, "2026-03-06": 0.54, "2026-03-07": 0.45, "2026-03-08": 0.46, "2026-03-09": 0.56, "2026-03-10": 0.54, "2026-03-11": 0.51, "2026-03-12": 0.49, "2026-03-13": 0.49, "2026-03-14": 0.45, "2026-03-15": 0.47, "2026-03-16": 0.5, "2026-03-17": 0.46, "2026-03-18": 0.51, "2026-03-19": 0.6, "2026-03-20": 0.52, "2026-03-21": 0.47, "2026-03-22": 0.48, "2026-03-23": 0.67, "2026-03-24": 0.56, "2026-03-25": 0.51, "2026-03-26": 0.48, "2026-03-27": 0.45, "2026-03-28": 0.39, "2026-03-29": 0.42, "2026-03-30": 0.46, "2026-03-31": 0.42, "2026-04-01": 0.45, "2026-04-02": 0.47, "2026-04-03": 0.39, "2026-04-04": 0.35, "2026-04-05": 0.38, "2026-04-06": 0.42, "2026-04-07": 0.42, "2026-04-08": 0.48, "2026-04-09": 0.44, "2026-04-10": 0.39, "2026-04-11": 0.35, "2026-04-12": 0.43, "2026-04-13": 0.42, "2026-04-14": 0.39, "2026-04-15": 0.38, "2026-04-16": 0.36, "2026-04-17": 0.38, "2026-04-18": 0.34, "2026-04-19": 0.38, "2026-04-20": 0.38, "2026-04-21": 0.38, "2026-04-22": 0.38, "2026-04-23": 0.4, "2026-04-24": 0.4, "2026-04-25": 0.31, "2026-04-26": 0.35, "2026-04-27": 0.38, "2026-04-28": 0.37, "2026-04-29": 0.36, "2026-04-30": 0.35, "2026-05-01": 0.31, "2026-05-02": 0.28, "2026-05-03": 0.29, "2026-05-04": 0.33, "2026-05-05": 0.32, "2026-05-06": 0.36, "2026-05-07": 0.35, "2026-05-08": 0.36, "2026-05-09": 0.26, "2026-05-10": 0.31, "2026-05-11": 0.34, "2026-05-12": 0.35, "2026-05-13": 0.34, "2026-05-14": 0.34, "2026-05-15": 0.35, "2026-05-16": 0.29, "2026-05-17": 0.31, "2026-05-18": 0.35, "2026-05-19": 0.35, "2026-05-20": 0.35, "2026-05-21": 0.37, "2026-05-22": 0.33, "2026-05-23": 0.27, "2026-05-24": 0.34, "2026-05-25": 0.33, "2026-05-26": 0.33, "2026-05-27": 0.36, "2026-05-28": 0.36, "2026-05-29": 0.33, "2026-05-30": 0.26, "2026-05-31": 0.3, "2026-06-01": 0.32, "2026-06-02": 0.33, "2026-06-03": 0.34, "2026-06-04": 0.34, "2026-06-05": 0.36, "2026-06-06": 0.31, "2026-06-07": 0.33, "2026-06-08": 0.38, "2026-06-09": 0.35, "2026-06-10": 0.44, "2026-06-11": 0.4, "2026-06-12": 0.39, "2026-06-13": 0.27, "2026-06-14": 0.31, "2026-06-15": 0.36, "2026-06-16": 0.36, "2026-06-17": 0.34, "2026-06-18": 0.36, "2026-06-19": 0.32, "2026-06-20": 0.28, "2026-06-21": 0.31, "2026-06-22": 0.33, "2026-06-23": 0.35, "2026-06-24": 0.35, "2026-06-25": 0.37, "2026-06-26": 0.35, "2026-06-27": 0.27, "2026-06-28": 0.32, "2026-06-29": 0.34, "2026-06-30": 0.32, "2026-07-01": 0.34, "2026-07-02": 0.36, "2026-07-03": 0.32, "2026-07-04": 0.24, "2026-07-05": 0.29, "2026-07-06": 0.32};
+var weeksPenetration = {"251201~1207": 0.4, "251208~1214": 0.41, "251215~1221": 0.43, "251222~1228": 0.46, "251229~0104": 0.47, "260105~0111": 0.48, "260112~0118": 0.5, "260119~0125": 0.52, "260126~0201": 0.77, "260202~0208": 0.73, "260209~0215": 0.48, "260216~0222": 0.4, "260223~0301": 0.51, "260302~0308": 0.56, "260309~0315": 0.5, "260316~0322": 0.51, "260323~0329": 0.51, "260330~0405": 0.42, "260406~0412": 0.42, "260413~0419": 0.38, "260420~0426": 0.38, "260427~0503": 0.34, "260504~0510": 0.33, "260511~0517": 0.33, "260518~0524": 0.34, "260525~0531": 0.33, "260601~0607": 0.33, "260608~0614": 0.37, "260615~0621": 0.34, "260622~0628": 0.34, "260629~0705": 0.32};
+var monthsPenetration = {"2025-12": 0.43, "2026-01": 0.56, "2026-02": 0.55, "2026-03": 0.52, "2026-04": 0.39, "2026-05": 0.33, "2026-06": 0.34, "2026-07": 0.32};
+
+function buildChart(data, type) {
+  var labels = Object.keys(data);
+  var dauVals = labels.map(function(k) { return data[k].dau; });
+  var comVals = labels.map(function(k) { return data[k].community; });
+
+  var option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      borderColor: '#e0e0e0', borderWidth: 1, padding: [10, 14],
+      formatter: function(params) {
+        var s = '<div style="font-weight:600;margin-bottom:6px;">' + params[0].axisValue + '</div>';
+        params.forEach(function(p) {
+          var v = p.seriesIndex === 0 ? Number(p.value).toLocaleString() : p.value;
+          s += '<div style="display:flex;align-items:center;gap:6px;margin:3px 0;">' +
+            '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + p.color + ';"></span>' +
+            p.seriesName + ': <strong>' + v + '</strong></div>';
+        });
+        return s;
+      }
+    },
+    legend: { data: ['主动DAU', '社区首页UV'], top: 5, textStyle: { fontSize: 13 } },
+    grid: { left: 60, right: 60, bottom: 40, top: 50 },
+    xAxis: {
+      type: 'category', data: labels,
+      axisLabel: { fontSize: 10, rotate: type === 'daily' ? 45 : 0, interval: type === 'daily' ? 13 : 0 },
+      axisLine: { lineStyle: { color: '#ccc' } }
+    },
+    yAxis: [
+      {
+        type: 'value', name: '主动DAU',
+        nameTextStyle: { fontSize: 13, fontWeight: 'bold', padding: [0,0,0,40] },
+        min: 0,
+        splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
+        axisLabel: { fontSize: 11, formatter: function(v) { return v >= 10000 ? (v/10000).toFixed(0) + '万' : v; } }
+      },
+      {
+        type: 'value', name: '社区首页UV',
+        nameTextStyle: { fontSize: 13, fontWeight: 'bold', padding: [0,40,0,0] },
+        min: 0,
+        splitLine: { show: false },
+        axisLabel: { fontSize: 11 }
+      }
+    ],
+    series: [
+      {
+        name: '主动DAU', type: 'line', yAxisIndex: 0,
+        data: dauVals, smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 2, color: '#5470C6' },
+        itemStyle: { color: '#5470C6' },
+        areaStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(84,112,198,0.25)' },
+              { offset: 1, color: 'rgba(84,112,198,0.02)' }
+            ]
+          }
+        }
+      },
+      {
+        name: '社区首页UV', type: 'line', yAxisIndex: 1,
+        data: comVals, smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 2, color: '#EE6666' },
+        itemStyle: { color: '#EE6666' },
+        areaStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(238,102,102,0.25)' },
+              { offset: 1, color: 'rgba(238,102,102,0.02)' }
+            ]
+          }
+        }
+      }
+    ]
+  };
+  return option;
+}
+
+function buildPenetrationChart(data, type) {
+  var labels = Object.keys(data);
+  var vals = labels.map(function(k) { return data[k]; });
+
+  var option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      borderColor: '#e0e0e0', borderWidth: 1, padding: [10, 14],
+      formatter: function(params) {
+        var p = params[0];
+        return '<div style="font-weight:600;margin-bottom:6px;">' + p.axisValue + '</div>' +
+          '功能渗透率: <strong>' + p.value + '%</strong>';
+      }
+    },
+    grid: { left: 60, right: 30, bottom: 40, top: 30 },
+    xAxis: {
+      type: 'category', data: labels,
+      axisLabel: { fontSize: 10, rotate: type === 'daily' ? 45 : 0, interval: type === 'daily' ? 13 : 0 },
+      axisLine: { lineStyle: { color: '#ccc' } }
+    },
+    yAxis: {
+      type: 'value', name: '渗透率(%)',
+      nameTextStyle: { fontSize: 12, fontWeight: 'bold' },
+      splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
+      axisLabel: { fontSize: 11, formatter: '{value}%' }
+    },
+    series: [
+      {
+        name: '功能渗透率', type: 'line',
+        data: vals, smooth: true,
+        symbol: type === 'daily' ? 'none' : 'circle',
+        symbolSize: 6,
+        lineStyle: { width: 3, color: '#91CC75' },
+        itemStyle: { color: '#91CC75' },
+        areaStyle: {
+          color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(145,204,117,0.35)' },
+              { offset: 1, color: 'rgba(145,204,117,0.02)' }
+            ]
+          }
+        }
+      }
+    ]
+  };
+  return option;
+}
+
+function renderTable(data, tab, tableId) {
+  var labels = Object.keys(data);
+  var tbody = document.querySelector('#' + tableId + ' tbody');
+  tbody.innerHTML = '';
+  labels.forEach(function(k) {
+    var row = document.createElement('tr');
+    var td1 = document.createElement('td'); td1.textContent = k;
+    var val = data[k];
+    if (typeof val === 'object') {
+      var td2 = document.createElement('td'); td2.textContent = Number(val.dau).toLocaleString();
+      var td3 = document.createElement('td'); td3.textContent = val.community;
+      row.appendChild(td1); row.appendChild(td2); row.appendChild(td3);
+    } else {
+      var td2 = document.createElement('td'); td2.textContent = val + '%';
+      row.appendChild(td1); row.appendChild(td2);
+    }
+    tbody.appendChild(row);
+  });
+}
+
+var chartDom = document.getElementById('chart');
+var myChart = echarts.init(chartDom);
+var chartDom2 = document.getElementById('chart2');
+var myChart2 = echarts.init(chartDom2);
+
+myChart.setOption(buildChart(daysData, 'daily'));
+myChart2.setOption(buildPenetrationChart(daysPenetration, 'daily'));
+renderTable(daysData, 'daily', 'data-table');
+renderTable(daysPenetration, 'daily', 'penetration-table');
+
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var tab = btn.getAttribute('data-tab');
+    var data, penData, type;
+    if (tab === 'daily') { data = daysData; penData = daysPenetration; type = 'daily'; }
+    else if (tab === 'weekly') { data = weeksData; penData = weeksPenetration; type = 'weekly'; }
+    else { data = monthsData; penData = monthsPenetration; type = 'monthly'; }
+
+    var thead1 = document.querySelector('#data-table thead tr');
+    var thead2 = document.querySelector('#penetration-table thead tr');
+    if (tab === 'daily') {
+      thead1.innerHTML = '<th>日期</th><th>主动DAU</th><th>社区首页UV</th>';
+      thead2.innerHTML = '<th>日期</th><th>功能渗透率</th>';
+    } else if (tab === 'weekly') {
+      thead1.innerHTML = '<th>周期</th><th>主动DAU(周均)</th><th>社区首页UV(周均)</th>';
+      thead2.innerHTML = '<th>周期</th><th>功能渗透率(周均)</th>';
+    } else {
+      thead1.innerHTML = '<th>月份</th><th>主动DAU(月均)</th><th>社区首页UV(月均)</th>';
+      thead2.innerHTML = '<th>月份</th><th>功能渗透率(月均)</th>';
+    }
+
+    myChart.setOption(buildChart(data, type));
+    myChart2.setOption(buildPenetrationChart(penData, type));
+    renderTable(data, tab, 'data-table');
+    renderTable(penData, tab, 'penetration-table');
+  });
+});
+
+window.addEventListener('resize', function() { myChart.resize(); myChart2.resize(); });
+</script>
+</body>
+</html>
