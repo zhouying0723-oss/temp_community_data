@@ -339,26 +339,58 @@ for d, dau, cu in zip(dates_full, dau_full, community_full):
     days_dict[d] = {'dau': dau, 'community': cu}
 
 # ========== 生成 ECharts HTML ==========
-# 发版时间标注数据
-release_versions = {
-    "2025-12-03": "v9.4.0 评论区发图/推荐优化/点赞动效",
-    "2026-01-14": "v9.6.0 创作者中心V2/评论排序优化/Feed流性能优化",
-    "2026-03-18": "v9.8.0 社区搜索V3/互动消息中心",
-    "2026-05-06": "v9.10.0 帖子详情页改版/关注推荐优化",
-}
-# 构建按标注文本聚合的版本数据（标注文本 -> 日期列表）
-release_marker = {}
-for d, v in release_versions.items():
-    # 只取版本号
-    ver = v.split(" ", 1)[0]
-    if ver not in release_marker:
-        release_marker[ver] = []
-    release_marker[ver].append(d)
+# 所有标注（喜娜AI / 社区/股吧/评论相关改动）
+all_annotations = [
+    # (日期, 描述, 标签)
+    # 喜娜AI
+    ("2024-05-29", "喜娜AI:正文页AI帮抢沙发&评论优化", "xina"),
+    ("2024-06-11", "喜娜AI:正文页AI摘要与语音播报合并到一行", "xina"),
+    ("2024-07-01", "喜娜AI:快讯详情页补帮写数据埋点", "xina"),
+    ("2025-04-15", "喜娜AI:前台页面相关接口", "xina"),
+    ("2025-04-25", "喜娜AI:股吧回复", "xina"),
+    ("2025-12-15", "喜娜AI入口更换为芝麻AI", "xina"),
+    ("2026-01-30", "鸿蒙:芝麻喜娜AI摘要改为芝麻AI摘要", "xina"),
+    ("2026-03-26", "鸿蒙:正文页支持喜娜提取摘要", "xina"),
+    # 社区/股吧/评论
+    ("2025-03-19", "个股评论右上互动消息入口改为消息中心入口", "community"),
+    ("2025-03-26", "分享到社区:发帖支持仅传图&展示schema", "community"),
+    ("2025-03-27", "发帖优化(股吧):帖子不展示在个人主页", "community"),
+    ("2025-04-15", "股票评论数据打点stock_comment统一", "community"),
+    ("2025-04-16", "社区首页返回按钮", "community"),
+    ("2025-04-23", "消息中心:清除未读数交互优化", "community"),
+    ("2025-04-29", "社区股吧帖子分类页卡(股吧tab)", "community"),
+    ("2025-05-07", "期货社区讨论吧", "community"),
+    ("2025-05-19", "社区-投票分享改为长图", "community"),
+    ("2025-05-21", "社区-主页同步账号视频内容", "community"),
+    ("2025-06-05", "社区导航增加热议个股/新闻分享到社区挂链", "community"),
+    ("2025-06-06", "讨论吧帖子加精样式", "community"),
+    ("2025-06-17", "社区发帖编辑界面图片位置大小优化", "community"),
+    ("2025-07-07", "新闻评论进搜索", "community"),
+    ("2025-07-11", "新闻评论@进消息信箱&评论详情页&分享海报", "community"),
+    ("2025-07-14", "我的关注-股吧及新闻帖子增加分享长图海报", "community"),
+    ("2025-07-25", "新闻评论长图分享海报位置补充", "community"),
+    ("2025-08-21", "个股评论列表页最新发帖/最新回复移到一级tab", "community"),
+    ("2025-08-29", "新闻评论中个股相关评论进股吧", "community"),
+    ("2025-09-01", "新闻/个股评论详情页回复顺序优化", "community"),
+    ("2025-09-15", "讨论吧聚合个股评论中的新闻评论", "community"),
+    ("2025-09-19", "个股评论列表页发主贴改为全屏发帖", "community"),
+    ("2025-10-14", "社区公约", "community"),
+    ("2025-10-15", "点击新闻和724评论头像进个人主页", "community"),
+    ("2025-11-06", "社区付费投票(投票/支付/个人主页/徽章)", "community"),
+    ("2025-11-25", "个人主页帖子列表&评论发布后显示徽章/炫彩昵称/头像框", "community"),
+    ("2026-03-09", "互动消息增加新闻评论", "community"),
+    ("2026-03-26", "社区及行情评论-语音消息", "community"),
+    ("2026-04-20", "社区-吧内支持屏蔽发帖功能", "community"),
+    ("2026-04-21", "纽约原油评论页tab支持scheme", "community"),
+    ("2026-04-29", "社区-大V私享会相关需求", "community"),
+    ("2026-05-06", "社区-评论送票", "community"),
+    ("2026-05-19", "社区-投票分享改为长图", "community"),
+    ("2026-05-29", "社区-发帖图片查看组件分享按钮去除", "community"),
+]
 
-# 构建日期->版本描述的映射
-date_version_map = {}
-for d, v in release_versions.items():
-    date_version_map[d] = v
+# 生成JS可用的标注数据（按日期合并，同一天可能有多个标签）
+# 每个标注对象: {date, label, tag, show: true}
+annotations_js = [{"date": a[0], "label": a[1], "tag": a[2]} for a in all_annotations]
 html = '''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -373,6 +405,7 @@ body { background: #f5f7fa; font-family: -apple-system, BlinkMacSystemFont, 'Seg
 .chart-section { margin-bottom: 10px; }
 h2 { text-align: center; color: #333; font-weight: 500; margin-bottom: 20px; }
 h3 { text-align: center; color: #555; font-weight: 500; margin: 20px 0 15px 0; font-size: 16px; }
+h4 { color: #444; font-weight: 500; margin: 20px 0 10px 0; font-size: 14px; }
 .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
 .tab-btn { padding: 8px 24px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; color: #555; transition: all .2s; }
 .tab-btn:hover { border-color: #5470C6; color: #5470C6; }
@@ -387,6 +420,16 @@ td { padding: 6px 10px; border: 1px solid #e0e5ee; text-align: center; color: #4
 tr:nth-child(even) { background: #fafbfc; }
 tr:hover { background: #f0f4ff; }
 .info { text-align: center; color: #999; font-size: 12px; margin-top: 12px; }
+.annotation-list { margin-top: 10px; max-height: 400px; overflow-y: auto; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 14px; }
+.annotation-item { display: flex; align-items: center; gap: 10px; padding: 5px 4px; border-bottom: 1px solid #f0f0f0; font-size: 13px; line-height: 1.5; }
+.annotation-item:last-child { border-bottom: none; }
+.annotation-item input[type="checkbox"] { cursor: pointer; flex-shrink: 0; width: 16px; height: 16px; }
+.tag-xina { display: inline-block; background: #3498DB; color: #fff; font-size: 11px; padding: 0 8px; border-radius: 10px; flex-shrink: 0; }
+.tag-community { display: inline-block; background: #27AE60; color: #fff; font-size: 11px; padding: 0 8px; border-radius: 10px; flex-shrink: 0; }
+.ann-date { color: #888; font-size: 12px; flex-shrink: 0; width: 82px; }
+.ann-label { color: #333; flex: 1; }
+.legend-row { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; font-size: 13px; }
+.legend-dot { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 4px; }
 </style>
 </head>
 <body>
@@ -417,6 +460,16 @@ tr:hover { background: #f0f4ff; }
     </table>
   </div>
 
+  <hr class="separator">
+
+  <h3>需求标注清单</h3>
+  <div class="legend-row">
+    <span><span class="legend-dot" style="background:#3498DB;"></span>喜娜AI</span>
+    <span><span class="legend-dot" style="background:#27AE60;"></span>社区/股吧/评论</span>
+    <span style="color:#999;">勾选开关: 控制图上对应竖线显隐</span>
+  </div>
+  <div class="annotation-list" id="annotationList"></div>
+
   <div class="info">数据周期: 2025-01-01 ~ 2026-07-06</div>
 </div>
 <script>
@@ -428,23 +481,45 @@ var daysPenetration = ''' + json.dumps(days_penetration) + ''';
 var weeksPenetration = ''' + json.dumps(weeks_penetration) + ''';
 var monthsPenetration = ''' + json.dumps(months_penetration) + ''';
 
-var dateVersion = ''' + json.dumps(date_version_map) + ''';
+var allAnnotations = ''' + json.dumps(annotations_js) + ''';
 
-function getVersionInfo(key) {
-  if (dateVersion[key]) {
-    return '<div style="color:#E6A23C;margin-top:4px;padding-top:4px;border-top:1px dashed #e0e0e0;">📦 ' + dateVersion[key] + '</div>';
-  }
-  return '';
-}
+// 每个标注默认显示
+var showMap = {};
+allAnnotations.forEach(function(a, i) { showMap[i] = true; });
 
-function getReleaseMarkLines(type) {
+// 标注颜色: xina -> 蓝色, community -> 绿色
+var tagColors = { xina: '#3498DB', community: '#27AE60' };
+var tagLabels = { xina: '喜娜AI', community: '社区' };
+
+// 获取当前应显示的markLine数据
+function getMarkLines(type) {
   var markers = [];
-  var releaseDates = Object.keys(dateVersion);
-  releaseDates.forEach(function(d) {
-    var label = type === 'daily' ? dateVersion[d].split(' ', 1)[0] : '';
-    markers.push({ xAxis: d, label: { formatter: label, fontSize: 10, color: '#E6A23C', position: 'start' }, lineStyle: { color: '#E6A23C', type: 'dashed', width: 1 } });
+  allAnnotations.forEach(function(a, i) {
+    if (!showMap[i]) return;
+    var color = tagColors[a.tag];
+    var label = type === 'daily' ? a.label.split(':')[0] : '';
+    markers.push({
+      xAxis: a.date,
+      label: { formatter: label, fontSize: 9, color: color, position: 'start' },
+      lineStyle: { color: color, type: 'dashed', width: 1 }
+    });
   });
   return markers;
+}
+
+// 获取tooltip中显示的信息
+function getAnnotationInfo(key) {
+  var parts = [];
+  allAnnotations.forEach(function(a) {
+    if (a.date === key) {
+      var color = tagColors[a.tag];
+      parts.push('<div style="color:' + color + ';margin:2px 0;">[' + tagLabels[a.tag] + '] ' + a.label + '</div>');
+    }
+  });
+  if (parts.length > 0) {
+    return '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e0e0e0;">' + parts.join('') + '</div>';
+  }
+  return '';
 }
 
 function buildChart(data, type) {
@@ -467,7 +542,7 @@ function buildChart(data, type) {
             '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + p.color + ';"></span>' +
             p.seriesName + ': <strong>' + v + '</strong></div>';
         });
-        return s + getVersionInfo(key);
+        return s + getAnnotationInfo(key);
       }
     },
     legend: { data: ['主动DAU', '社区首页UV'], top: 5, textStyle: { fontSize: 13 } },
@@ -507,6 +582,13 @@ function buildChart(data, type) {
               { offset: 1, color: 'rgba(84,112,198,0.02)' }
             ]
           }
+        },
+        markLine: {
+          silent: true,
+          symbol: ['none', 'none'],
+          data: getMarkLines(type),
+          label: { fontSize: 9 },
+          lineStyle: { type: 'dashed', width: 1 }
         }
       },
       {
@@ -526,9 +608,9 @@ function buildChart(data, type) {
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          data: getReleaseMarkLines(type),
-          label: { fontSize: 10, color: '#E6A23C' },
-          lineStyle: { color: '#E6A23C', type: 'dashed', width: 1 }
+          data: getMarkLines(type),
+          label: { fontSize: 9 },
+          lineStyle: { type: 'dashed', width: 1 }
         }
       }
     ]
@@ -550,7 +632,7 @@ function buildPenetrationChart(data, type) {
         var p = params[0];
         return '<div style="font-weight:600;margin-bottom:6px;">' + p.axisValue + '</div>' +
           '功能渗透率: <strong>' + p.value + '%</strong>' +
-          getVersionInfo(p.axisValue);
+          getAnnotationInfo(p.axisValue);
       }
     },
     grid: { left: 60, right: 30, bottom: 40, top: 30 },
@@ -584,9 +666,9 @@ function buildPenetrationChart(data, type) {
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          data: getReleaseMarkLines(type),
-          label: { fontSize: 10, color: '#E6A23C' },
-          lineStyle: { color: '#E6A23C', type: 'dashed', width: 1 }
+          data: getMarkLines(type),
+          label: { fontSize: 9 },
+          lineStyle: { type: 'dashed', width: 1 }
         }
       }
     ]
@@ -614,25 +696,64 @@ function renderTable(data, tab, tableId) {
   });
 }
 
+function refreshCharts(type) {
+  myChart.setOption(buildChart(currentData, currentType));
+  myChart2.setOption(buildPenetrationChart(currentPenData, currentType));
+}
+
+// 构建标注清单
+function buildAnnotationList() {
+  var list = document.getElementById('annotationList');
+  allAnnotations.forEach(function(a, i) {
+    var div = document.createElement('div');
+    div.className = 'annotation-item';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.addEventListener('change', function() {
+      showMap[i] = this.checked;
+      refreshCharts();
+    });
+    var tag = document.createElement('span');
+    tag.className = 'tag-' + a.tag;
+    tag.textContent = tagLabels[a.tag];
+    var date = document.createElement('span');
+    date.className = 'ann-date';
+    date.textContent = a.date;
+    var label = document.createElement('span');
+    label.className = 'ann-label';
+    label.textContent = a.label;
+    div.appendChild(cb);
+    div.appendChild(tag);
+    div.appendChild(date);
+    div.appendChild(label);
+    list.appendChild(div);
+  });
+}
+
 var chartDom = document.getElementById('chart');
 var myChart = echarts.init(chartDom);
 var chartDom2 = document.getElementById('chart2');
 var myChart2 = echarts.init(chartDom2);
 
+var currentData = daysData;
+var currentPenData = daysPenetration;
+var currentType = 'daily';
+
 myChart.setOption(buildChart(daysData, 'daily'));
 myChart2.setOption(buildPenetrationChart(daysPenetration, 'daily'));
 renderTable(daysData, 'daily', 'data-table');
 renderTable(daysPenetration, 'daily', 'penetration-table');
+buildAnnotationList();
 
 document.querySelectorAll('.tab-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
     var tab = btn.getAttribute('data-tab');
-    var data, penData, type;
-    if (tab === 'daily') { data = daysData; penData = daysPenetration; type = 'daily'; }
-    else if (tab === 'weekly') { data = weeksData; penData = weeksPenetration; type = 'weekly'; }
-    else { data = monthsData; penData = monthsPenetration; type = 'monthly'; }
+    if (tab === 'daily') { currentData = daysData; currentPenData = daysPenetration; currentType = 'daily'; }
+    else if (tab === 'weekly') { currentData = weeksData; currentPenData = weeksPenetration; currentType = 'weekly'; }
+    else { currentData = monthsData; currentPenData = monthsPenetration; currentType = 'monthly'; }
 
     var thead1 = document.querySelector('#data-table thead tr');
     var thead2 = document.querySelector('#penetration-table thead tr');
@@ -647,10 +768,10 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
       thead2.innerHTML = '<th>月份</th><th>功能渗透率(月均)</th>';
     }
 
-    myChart.setOption(buildChart(data, type));
-    myChart2.setOption(buildPenetrationChart(penData, type));
-    renderTable(data, tab, 'data-table');
-    renderTable(penData, tab, 'penetration-table');
+    myChart.setOption(buildChart(currentData, currentType));
+    myChart2.setOption(buildPenetrationChart(currentPenData, currentType));
+    renderTable(currentData, tab, 'data-table');
+    renderTable(currentPenData, tab, 'penetration-table');
   });
 });
 

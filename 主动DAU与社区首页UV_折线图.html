@@ -12,6 +12,7 @@ body { background: #f5f7fa; font-family: -apple-system, BlinkMacSystemFont, 'Seg
 .chart-section { margin-bottom: 10px; }
 h2 { text-align: center; color: #333; font-weight: 500; margin-bottom: 20px; }
 h3 { text-align: center; color: #555; font-weight: 500; margin: 20px 0 15px 0; font-size: 16px; }
+h4 { color: #444; font-weight: 500; margin: 20px 0 10px 0; font-size: 14px; }
 .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
 .tab-btn { padding: 8px 24px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; color: #555; transition: all .2s; }
 .tab-btn:hover { border-color: #5470C6; color: #5470C6; }
@@ -26,6 +27,16 @@ td { padding: 6px 10px; border: 1px solid #e0e5ee; text-align: center; color: #4
 tr:nth-child(even) { background: #fafbfc; }
 tr:hover { background: #f0f4ff; }
 .info { text-align: center; color: #999; font-size: 12px; margin-top: 12px; }
+.annotation-list { margin-top: 10px; max-height: 400px; overflow-y: auto; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 14px; }
+.annotation-item { display: flex; align-items: center; gap: 10px; padding: 5px 4px; border-bottom: 1px solid #f0f0f0; font-size: 13px; line-height: 1.5; }
+.annotation-item:last-child { border-bottom: none; }
+.annotation-item input[type="checkbox"] { cursor: pointer; flex-shrink: 0; width: 16px; height: 16px; }
+.tag-xina { display: inline-block; background: #3498DB; color: #fff; font-size: 11px; padding: 0 8px; border-radius: 10px; flex-shrink: 0; }
+.tag-community { display: inline-block; background: #27AE60; color: #fff; font-size: 11px; padding: 0 8px; border-radius: 10px; flex-shrink: 0; }
+.ann-date { color: #888; font-size: 12px; flex-shrink: 0; width: 82px; }
+.ann-label { color: #333; flex: 1; }
+.legend-row { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; font-size: 13px; }
+.legend-dot { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 4px; }
 </style>
 </head>
 <body>
@@ -56,6 +67,16 @@ tr:hover { background: #f0f4ff; }
     </table>
   </div>
 
+  <hr class="separator">
+
+  <h3>需求标注清单</h3>
+  <div class="legend-row">
+    <span><span class="legend-dot" style="background:#3498DB;"></span>喜娜AI</span>
+    <span><span class="legend-dot" style="background:#27AE60;"></span>社区/股吧/评论</span>
+    <span style="color:#999;">勾选开关: 控制图上对应竖线显隐</span>
+  </div>
+  <div class="annotation-list" id="annotationList"></div>
+
   <div class="info">数据周期: 2025-01-01 ~ 2026-07-06</div>
 </div>
 <script>
@@ -67,23 +88,45 @@ var daysPenetration = {"2025-01-01": 0.35, "2025-01-02": 0.44, "2025-01-03": 0.4
 var weeksPenetration = {"250101~0107": 0.41, "250108~0114": 0.41, "250115~0121": 0.4, "250122~0128": 0.37, "250129~0204": 0.37, "250205~0211": 0.4, "250212~0218": 0.41, "250219~0225": 0.41, "250226~0304": 0.43, "250305~0311": 0.43, "250312~0318": 0.42, "250319~0325": 0.41, "250326~0401": 0.42, "250402~0408": 0.55, "250409~0415": 0.55, "250416~0422": 0.44, "250423~0429": 0.44, "250430~0506": 0.39, "250507~0513": 0.44, "250514~0520": 0.42, "250521~0527": 0.41, "250528~0603": 0.42, "250604~0610": 0.42, "250611~0617": 0.43, "250618~0624": 0.43, "250625~0701": 0.39, "250702~0708": 0.38, "250709~0715": 0.39, "250716~0722": 0.39, "250723~0729": 0.4, "250730~0805": 0.41, "250806~0812": 0.4, "250813~0819": 0.41, "250820~0826": 0.45, "250827~0902": 0.45, "250903~0909": 0.45, "250910~0916": 0.45, "250917~0923": 0.46, "250924~0930": 0.42, "251001~1007": 0.4, "251008~1014": 0.48, "251015~1021": 0.43, "251022~1028": 0.41, "251029~1104": 0.41, "251105~1111": 0.39, "251112~1118": 0.42, "251119~1125": 0.43, "251126~1202": 0.39, "251203~1209": 0.4, "251210~1216": 0.43, "251217~1223": 0.43, "251224~1230": 0.48, "251231~0106": 0.45, "260107~0113": 0.49, "260114~0120": 0.49, "260121~0127": 0.55, "260128~0203": 0.85, "260204~0210": 0.63, "260211~0217": 0.44, "260218~0224": 0.43, "260225~0303": 0.55, "260304~0310": 0.53, "260311~0317": 0.48, "260318~0324": 0.55, "260325~0331": 0.45, "260401~0407": 0.42, "260408~0414": 0.42, "260415~0421": 0.37, "260422~0428": 0.37, "260429~0505": 0.32, "260506~0512": 0.34, "260513~0519": 0.34, "260520~0526": 0.33, "260527~0602": 0.33, "260603~0609": 0.35, "260610~0616": 0.37, "260617~0623": 0.33, "260624~0630": 0.33};
 var monthsPenetration = {"2025-01": 0.39, "2025-02": 0.41, "2025-03": 0.42, "2025-04": 0.49, "2025-05": 0.42, "2025-06": 0.42, "2025-07": 0.4, "2025-08": 0.42, "2025-09": 0.45, "2025-10": 0.43, "2025-11": 0.41, "2025-12": 0.43, "2026-01": 0.56, "2026-02": 0.55, "2026-03": 0.52, "2026-04": 0.39, "2026-05": 0.33, "2026-06": 0.34, "2026-07": 0.32};
 
-var dateVersion = {"2025-12-03": "v9.4.0 \u8bc4\u8bba\u533a\u53d1\u56fe/\u63a8\u8350\u4f18\u5316/\u70b9\u8d5e\u52a8\u6548", "2026-01-14": "v9.6.0 \u521b\u4f5c\u8005\u4e2d\u5fc3V2/\u8bc4\u8bba\u6392\u5e8f\u4f18\u5316/Feed\u6d41\u6027\u80fd\u4f18\u5316", "2026-03-18": "v9.8.0 \u793e\u533a\u641c\u7d22V3/\u4e92\u52a8\u6d88\u606f\u4e2d\u5fc3", "2026-05-06": "v9.10.0 \u5e16\u5b50\u8be6\u60c5\u9875\u6539\u7248/\u5173\u6ce8\u63a8\u8350\u4f18\u5316"};
+var allAnnotations = [{"date": "2024-05-29", "label": "\u559c\u5a1cAI:\u6b63\u6587\u9875AI\u5e2e\u62a2\u6c99\u53d1&\u8bc4\u8bba\u4f18\u5316", "tag": "xina"}, {"date": "2024-06-11", "label": "\u559c\u5a1cAI:\u6b63\u6587\u9875AI\u6458\u8981\u4e0e\u8bed\u97f3\u64ad\u62a5\u5408\u5e76\u5230\u4e00\u884c", "tag": "xina"}, {"date": "2024-07-01", "label": "\u559c\u5a1cAI:\u5feb\u8baf\u8be6\u60c5\u9875\u8865\u5e2e\u5199\u6570\u636e\u57cb\u70b9", "tag": "xina"}, {"date": "2025-04-15", "label": "\u559c\u5a1cAI:\u524d\u53f0\u9875\u9762\u76f8\u5173\u63a5\u53e3", "tag": "xina"}, {"date": "2025-04-25", "label": "\u559c\u5a1cAI:\u80a1\u5427\u56de\u590d", "tag": "xina"}, {"date": "2025-12-15", "label": "\u559c\u5a1cAI\u5165\u53e3\u66f4\u6362\u4e3a\u829d\u9ebbAI", "tag": "xina"}, {"date": "2026-01-30", "label": "\u9e3f\u8499:\u829d\u9ebb\u559c\u5a1cAI\u6458\u8981\u6539\u4e3a\u829d\u9ebbAI\u6458\u8981", "tag": "xina"}, {"date": "2026-03-26", "label": "\u9e3f\u8499:\u6b63\u6587\u9875\u652f\u6301\u559c\u5a1c\u63d0\u53d6\u6458\u8981", "tag": "xina"}, {"date": "2025-03-19", "label": "\u4e2a\u80a1\u8bc4\u8bba\u53f3\u4e0a\u4e92\u52a8\u6d88\u606f\u5165\u53e3\u6539\u4e3a\u6d88\u606f\u4e2d\u5fc3\u5165\u53e3", "tag": "community"}, {"date": "2025-03-26", "label": "\u5206\u4eab\u5230\u793e\u533a:\u53d1\u5e16\u652f\u6301\u4ec5\u4f20\u56fe&\u5c55\u793aschema", "tag": "community"}, {"date": "2025-03-27", "label": "\u53d1\u5e16\u4f18\u5316(\u80a1\u5427):\u5e16\u5b50\u4e0d\u5c55\u793a\u5728\u4e2a\u4eba\u4e3b\u9875", "tag": "community"}, {"date": "2025-04-15", "label": "\u80a1\u7968\u8bc4\u8bba\u6570\u636e\u6253\u70b9stock_comment\u7edf\u4e00", "tag": "community"}, {"date": "2025-04-16", "label": "\u793e\u533a\u9996\u9875\u8fd4\u56de\u6309\u94ae", "tag": "community"}, {"date": "2025-04-23", "label": "\u6d88\u606f\u4e2d\u5fc3:\u6e05\u9664\u672a\u8bfb\u6570\u4ea4\u4e92\u4f18\u5316", "tag": "community"}, {"date": "2025-04-29", "label": "\u793e\u533a\u80a1\u5427\u5e16\u5b50\u5206\u7c7b\u9875\u5361(\u80a1\u5427tab)", "tag": "community"}, {"date": "2025-05-07", "label": "\u671f\u8d27\u793e\u533a\u8ba8\u8bba\u5427", "tag": "community"}, {"date": "2025-05-19", "label": "\u793e\u533a-\u6295\u7968\u5206\u4eab\u6539\u4e3a\u957f\u56fe", "tag": "community"}, {"date": "2025-05-21", "label": "\u793e\u533a-\u4e3b\u9875\u540c\u6b65\u8d26\u53f7\u89c6\u9891\u5185\u5bb9", "tag": "community"}, {"date": "2025-06-05", "label": "\u793e\u533a\u5bfc\u822a\u589e\u52a0\u70ed\u8bae\u4e2a\u80a1/\u65b0\u95fb\u5206\u4eab\u5230\u793e\u533a\u6302\u94fe", "tag": "community"}, {"date": "2025-06-06", "label": "\u8ba8\u8bba\u5427\u5e16\u5b50\u52a0\u7cbe\u6837\u5f0f", "tag": "community"}, {"date": "2025-06-17", "label": "\u793e\u533a\u53d1\u5e16\u7f16\u8f91\u754c\u9762\u56fe\u7247\u4f4d\u7f6e\u5927\u5c0f\u4f18\u5316", "tag": "community"}, {"date": "2025-07-07", "label": "\u65b0\u95fb\u8bc4\u8bba\u8fdb\u641c\u7d22", "tag": "community"}, {"date": "2025-07-11", "label": "\u65b0\u95fb\u8bc4\u8bba@\u8fdb\u6d88\u606f\u4fe1\u7bb1&\u8bc4\u8bba\u8be6\u60c5\u9875&\u5206\u4eab\u6d77\u62a5", "tag": "community"}, {"date": "2025-07-14", "label": "\u6211\u7684\u5173\u6ce8-\u80a1\u5427\u53ca\u65b0\u95fb\u5e16\u5b50\u589e\u52a0\u5206\u4eab\u957f\u56fe\u6d77\u62a5", "tag": "community"}, {"date": "2025-07-25", "label": "\u65b0\u95fb\u8bc4\u8bba\u957f\u56fe\u5206\u4eab\u6d77\u62a5\u4f4d\u7f6e\u8865\u5145", "tag": "community"}, {"date": "2025-08-21", "label": "\u4e2a\u80a1\u8bc4\u8bba\u5217\u8868\u9875\u6700\u65b0\u53d1\u5e16/\u6700\u65b0\u56de\u590d\u79fb\u5230\u4e00\u7ea7tab", "tag": "community"}, {"date": "2025-08-29", "label": "\u65b0\u95fb\u8bc4\u8bba\u4e2d\u4e2a\u80a1\u76f8\u5173\u8bc4\u8bba\u8fdb\u80a1\u5427", "tag": "community"}, {"date": "2025-09-01", "label": "\u65b0\u95fb/\u4e2a\u80a1\u8bc4\u8bba\u8be6\u60c5\u9875\u56de\u590d\u987a\u5e8f\u4f18\u5316", "tag": "community"}, {"date": "2025-09-15", "label": "\u8ba8\u8bba\u5427\u805a\u5408\u4e2a\u80a1\u8bc4\u8bba\u4e2d\u7684\u65b0\u95fb\u8bc4\u8bba", "tag": "community"}, {"date": "2025-09-19", "label": "\u4e2a\u80a1\u8bc4\u8bba\u5217\u8868\u9875\u53d1\u4e3b\u8d34\u6539\u4e3a\u5168\u5c4f\u53d1\u5e16", "tag": "community"}, {"date": "2025-10-14", "label": "\u793e\u533a\u516c\u7ea6", "tag": "community"}, {"date": "2025-10-15", "label": "\u70b9\u51fb\u65b0\u95fb\u548c724\u8bc4\u8bba\u5934\u50cf\u8fdb\u4e2a\u4eba\u4e3b\u9875", "tag": "community"}, {"date": "2025-11-06", "label": "\u793e\u533a\u4ed8\u8d39\u6295\u7968(\u6295\u7968/\u652f\u4ed8/\u4e2a\u4eba\u4e3b\u9875/\u5fbd\u7ae0)", "tag": "community"}, {"date": "2025-11-25", "label": "\u4e2a\u4eba\u4e3b\u9875\u5e16\u5b50\u5217\u8868&\u8bc4\u8bba\u53d1\u5e03\u540e\u663e\u793a\u5fbd\u7ae0/\u70ab\u5f69\u6635\u79f0/\u5934\u50cf\u6846", "tag": "community"}, {"date": "2026-03-09", "label": "\u4e92\u52a8\u6d88\u606f\u589e\u52a0\u65b0\u95fb\u8bc4\u8bba", "tag": "community"}, {"date": "2026-03-26", "label": "\u793e\u533a\u53ca\u884c\u60c5\u8bc4\u8bba-\u8bed\u97f3\u6d88\u606f", "tag": "community"}, {"date": "2026-04-20", "label": "\u793e\u533a-\u5427\u5185\u652f\u6301\u5c4f\u853d\u53d1\u5e16\u529f\u80fd", "tag": "community"}, {"date": "2026-04-21", "label": "\u7ebd\u7ea6\u539f\u6cb9\u8bc4\u8bba\u9875tab\u652f\u6301scheme", "tag": "community"}, {"date": "2026-04-29", "label": "\u793e\u533a-\u5927V\u79c1\u4eab\u4f1a\u76f8\u5173\u9700\u6c42", "tag": "community"}, {"date": "2026-05-06", "label": "\u793e\u533a-\u8bc4\u8bba\u9001\u7968", "tag": "community"}, {"date": "2026-05-19", "label": "\u793e\u533a-\u6295\u7968\u5206\u4eab\u6539\u4e3a\u957f\u56fe", "tag": "community"}, {"date": "2026-05-29", "label": "\u793e\u533a-\u53d1\u5e16\u56fe\u7247\u67e5\u770b\u7ec4\u4ef6\u5206\u4eab\u6309\u94ae\u53bb\u9664", "tag": "community"}];
 
-function getVersionInfo(key) {
-  if (dateVersion[key]) {
-    return '<div style="color:#E6A23C;margin-top:4px;padding-top:4px;border-top:1px dashed #e0e0e0;">📦 ' + dateVersion[key] + '</div>';
-  }
-  return '';
-}
+// 每个标注默认显示
+var showMap = {};
+allAnnotations.forEach(function(a, i) { showMap[i] = true; });
 
-function getReleaseMarkLines(type) {
+// 标注颜色: xina -> 蓝色, community -> 绿色
+var tagColors = { xina: '#3498DB', community: '#27AE60' };
+var tagLabels = { xina: '喜娜AI', community: '社区' };
+
+// 获取当前应显示的markLine数据
+function getMarkLines(type) {
   var markers = [];
-  var releaseDates = Object.keys(dateVersion);
-  releaseDates.forEach(function(d) {
-    var label = type === 'daily' ? dateVersion[d].split(' ', 1)[0] : '';
-    markers.push({ xAxis: d, label: { formatter: label, fontSize: 10, color: '#E6A23C', position: 'start' }, lineStyle: { color: '#E6A23C', type: 'dashed', width: 1 } });
+  allAnnotations.forEach(function(a, i) {
+    if (!showMap[i]) return;
+    var color = tagColors[a.tag];
+    var label = type === 'daily' ? a.label.split(':')[0] : '';
+    markers.push({
+      xAxis: a.date,
+      label: { formatter: label, fontSize: 9, color: color, position: 'start' },
+      lineStyle: { color: color, type: 'dashed', width: 1 }
+    });
   });
   return markers;
+}
+
+// 获取tooltip中显示的信息
+function getAnnotationInfo(key) {
+  var parts = [];
+  allAnnotations.forEach(function(a) {
+    if (a.date === key) {
+      var color = tagColors[a.tag];
+      parts.push('<div style="color:' + color + ';margin:2px 0;">[' + tagLabels[a.tag] + '] ' + a.label + '</div>');
+    }
+  });
+  if (parts.length > 0) {
+    return '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e0e0e0;">' + parts.join('') + '</div>';
+  }
+  return '';
 }
 
 function buildChart(data, type) {
@@ -106,7 +149,7 @@ function buildChart(data, type) {
             '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + p.color + ';"></span>' +
             p.seriesName + ': <strong>' + v + '</strong></div>';
         });
-        return s + getVersionInfo(key);
+        return s + getAnnotationInfo(key);
       }
     },
     legend: { data: ['主动DAU', '社区首页UV'], top: 5, textStyle: { fontSize: 13 } },
@@ -146,6 +189,13 @@ function buildChart(data, type) {
               { offset: 1, color: 'rgba(84,112,198,0.02)' }
             ]
           }
+        },
+        markLine: {
+          silent: true,
+          symbol: ['none', 'none'],
+          data: getMarkLines(type),
+          label: { fontSize: 9 },
+          lineStyle: { type: 'dashed', width: 1 }
         }
       },
       {
@@ -165,9 +215,9 @@ function buildChart(data, type) {
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          data: getReleaseMarkLines(type),
-          label: { fontSize: 10, color: '#E6A23C' },
-          lineStyle: { color: '#E6A23C', type: 'dashed', width: 1 }
+          data: getMarkLines(type),
+          label: { fontSize: 9 },
+          lineStyle: { type: 'dashed', width: 1 }
         }
       }
     ]
@@ -189,7 +239,7 @@ function buildPenetrationChart(data, type) {
         var p = params[0];
         return '<div style="font-weight:600;margin-bottom:6px;">' + p.axisValue + '</div>' +
           '功能渗透率: <strong>' + p.value + '%</strong>' +
-          getVersionInfo(p.axisValue);
+          getAnnotationInfo(p.axisValue);
       }
     },
     grid: { left: 60, right: 30, bottom: 40, top: 30 },
@@ -223,9 +273,9 @@ function buildPenetrationChart(data, type) {
         markLine: {
           silent: true,
           symbol: ['none', 'none'],
-          data: getReleaseMarkLines(type),
-          label: { fontSize: 10, color: '#E6A23C' },
-          lineStyle: { color: '#E6A23C', type: 'dashed', width: 1 }
+          data: getMarkLines(type),
+          label: { fontSize: 9 },
+          lineStyle: { type: 'dashed', width: 1 }
         }
       }
     ]
@@ -253,25 +303,64 @@ function renderTable(data, tab, tableId) {
   });
 }
 
+function refreshCharts(type) {
+  myChart.setOption(buildChart(currentData, currentType));
+  myChart2.setOption(buildPenetrationChart(currentPenData, currentType));
+}
+
+// 构建标注清单
+function buildAnnotationList() {
+  var list = document.getElementById('annotationList');
+  allAnnotations.forEach(function(a, i) {
+    var div = document.createElement('div');
+    div.className = 'annotation-item';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.addEventListener('change', function() {
+      showMap[i] = this.checked;
+      refreshCharts();
+    });
+    var tag = document.createElement('span');
+    tag.className = 'tag-' + a.tag;
+    tag.textContent = tagLabels[a.tag];
+    var date = document.createElement('span');
+    date.className = 'ann-date';
+    date.textContent = a.date;
+    var label = document.createElement('span');
+    label.className = 'ann-label';
+    label.textContent = a.label;
+    div.appendChild(cb);
+    div.appendChild(tag);
+    div.appendChild(date);
+    div.appendChild(label);
+    list.appendChild(div);
+  });
+}
+
 var chartDom = document.getElementById('chart');
 var myChart = echarts.init(chartDom);
 var chartDom2 = document.getElementById('chart2');
 var myChart2 = echarts.init(chartDom2);
 
+var currentData = daysData;
+var currentPenData = daysPenetration;
+var currentType = 'daily';
+
 myChart.setOption(buildChart(daysData, 'daily'));
 myChart2.setOption(buildPenetrationChart(daysPenetration, 'daily'));
 renderTable(daysData, 'daily', 'data-table');
 renderTable(daysPenetration, 'daily', 'penetration-table');
+buildAnnotationList();
 
 document.querySelectorAll('.tab-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
     var tab = btn.getAttribute('data-tab');
-    var data, penData, type;
-    if (tab === 'daily') { data = daysData; penData = daysPenetration; type = 'daily'; }
-    else if (tab === 'weekly') { data = weeksData; penData = weeksPenetration; type = 'weekly'; }
-    else { data = monthsData; penData = monthsPenetration; type = 'monthly'; }
+    if (tab === 'daily') { currentData = daysData; currentPenData = daysPenetration; currentType = 'daily'; }
+    else if (tab === 'weekly') { currentData = weeksData; currentPenData = weeksPenetration; currentType = 'weekly'; }
+    else { currentData = monthsData; currentPenData = monthsPenetration; currentType = 'monthly'; }
 
     var thead1 = document.querySelector('#data-table thead tr');
     var thead2 = document.querySelector('#penetration-table thead tr');
@@ -286,10 +375,10 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
       thead2.innerHTML = '<th>月份</th><th>功能渗透率(月均)</th>';
     }
 
-    myChart.setOption(buildChart(data, type));
-    myChart2.setOption(buildPenetrationChart(penData, type));
-    renderTable(data, tab, 'data-table');
-    renderTable(penData, tab, 'penetration-table');
+    myChart.setOption(buildChart(currentData, currentType));
+    myChart2.setOption(buildPenetrationChart(currentPenData, currentType));
+    renderTable(currentData, tab, 'data-table');
+    renderTable(currentPenData, tab, 'penetration-table');
   });
 });
 
